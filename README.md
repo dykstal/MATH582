@@ -1,4 +1,2 @@
-# Statistics Practicum (MATH 582)
-Spring 2020
-
-This repository stores code for the statistics capstone project at the Colorado School of Mines. **Insert Description Here.**
+## Statistics Practicum (MATH 582)
+This repository stores the work completed independently by Aidan Dykstal during the Statistics Practicum at the Colorado School of Mines (Spring 2020).

@@ -46,9 +46,12 @@ class MethaneService(Resource):
     '''
     Main Service for Methane Analysis Web Interfaces.
     '''
-    def __init__(self, config):
+    def __init__(self, config, M):
         # Initialize Local Configuration
         self.config = config
+
+        # Initialize Model Matrix
+        self.M = M
 
         # Initialize Web Interfaces
         self.app = Flask(__name__)
@@ -61,29 +64,45 @@ class MethaneService(Resource):
         # Create Routes for the Web Interfaces
         @self.app.route('/tropomi')
         def index():
-            # TODO -> Fix HTML
             TEMPLATE_NAME = 'main.html'
             return render_template(TEMPLATE_NAME)
 
         @self.app.route('/tropomi', methods = ['POST'])
         def indexPOST():
-            # TODO -> Adapt to Fixed HTML
             # Extract Entries Supplied to the Webpage
-            title = request.form['title']
-            author = request.form['author']
-            text = request.form['text']
+            analytic = request.form['analytic']
+            if request.form['minLat'] != '':
+                minLat = float(request.form['minLat'])
+            else:
+                minLat = -90.0
+            if request.form['maxLat'] != '':
+                maxLat = float(request.form['maxLat'])
+            else:
+                maxLat = 90.0
+            if request.form['minLon'] != '':
+                minLon = float(request.form['minLon'])
+            else:
+                minLon = -180.0
+            if request.form['maxLon'] != '':
+                maxLon = float(request.form['maxLon'])
+            else:
+                maxLon = 180.0
+            latBox = (min(minLat, maxLat), max(minLat, maxLat))
+            lonBox = (min(minLon, maxLon), max(minLon, maxLon))
 
             # Perform Data Analysis
-            # TODO -> Actually Add Configurable Settings on the Webpage
-            results = analyzer.testAnalytic()
+            results = analyzer.testAnalytic(self.M, analytic, latBox, lonBox)
             visualization = visualizer.testVisualizer()
 
             # Post the Results and Visualizations to the Webpage
             POST_TEMPLATE_NAME = 'mainPOST.html'
             IMAGE_PATH = '../static/images/%s' % visualization
             return render_template(POST_TEMPLATE_NAME,
-                                   title = title,
-                                   author = author,
+                                   analytic = analytic,
+                                   minLat = ('%.3f' % minLat),
+                                   maxLat = ('%.3f' % maxLat),
+                                   minLon = ('%.3f' % minLon),
+                                   maxLon = ('%.3f' % maxLon),
                                    results = results,
                                    image = IMAGE_PATH)
 

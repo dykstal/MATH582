@@ -16,7 +16,7 @@
 
     <section id="passReset">
 
-      <h2> Some Test Forms: </h2>
+      <h2> Analytic Selection: </h2>
 
       <p id="passSet"></p>
 
@@ -24,12 +24,19 @@
 
           <p id="message"></p>
 
-          <label for="title"> Title: </label><input type="text" id="title" name="title" required> <span class="required">* </span> <br/> 
+	  <label for="analytic"> Analytic: </label><select name="analytic" required>
+		  <option disabled selected value=""> -- select an analytic -- </option>
+		  <option value="FaST Anomaly Detector">FaST Anomaly Detector</option>
+		  <option value="Relevance Estimator 9000">Relevance Estimator 9000</option>
+	      </select>
+	      <span class="required">* </span><br/>
 
-          <label for="author"> Author: </label><input type="text" id="author" name="author" required> <span class="required">* </span> <br/> <br/>
+       <h2> Latitude-Longitude Range Selection: </h2>
 
-          <label for="text"> Text: </label><span class="required">* </span><br/><textarea id="text" name="text" rows="20" cols="70" required></textarea>
-        <br/>
+       <label for="minLat"> Mininimum Latitude [-90.000, 90.000]: </label><input type="text" pattern="^\-(?:90)(?:\.0*)?|(?:([1-8][0-9]))(?:\.\d*)?|(?:([0-9]))(?:\.\d*)?$"  id="minLat" name="minLat"> <br/>
+       <label for="maxLat"> Maximum Latitude [-90.000, 90.000]: </label><input type="text" pattern="^\-(?:90)(?:\.0*)?|(?:([1-8][0-9]))(?:\.\d*)?|(?:([0-9]))(?:\.\d*)?$" id="maxLat" name="maxLat"> <br/>
+       <label for="minLon"> Mininimum Longitude [-180.000, 180.000]: </label><input type="text" pattern="^\-(?:180)(?:\.0*)?|(?:([1-7][0-9][0-9]))(?:\.\d*)?|(?:([0-9][0-9]))(?:\.\d*)?|(?:([0-9]))(?:\.\d*)?$" id="minLon" name="minLon"> <br/>
+       <label for="maxLon"> Maximum Longitude [-180.000, 180.000]: </label><input type="text" pattern="^\-(?:180)(?:\.0*)?|(?:([1-7][0-9][0-9]))(?:\.\d*)?|(?:([0-9][0-9]))(?:\.\d*)?|(?:([0-9]))(?:\.\d*)?$" id="maxLon" name="maxLon"> <br/>
         <input type="submit" id="submit" name="submit" value="Submit"> 
       </form>
       <script src="./main.js"></script>

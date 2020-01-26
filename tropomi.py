@@ -11,7 +11,6 @@ import logging
 import yaml
 
 # TODO Import the Service Tools
-from software.analyze import service
 from software.analyze.service import MethaneService
 from software.collect import collector
 
@@ -85,6 +84,6 @@ if __name__ == '__main__':
 
     # Activate the Service
     logging.info('Starting Service...')
-    service = MethaneService(config)
+    service = MethaneService(config, M)
     service.start()
     logging.info('Done!')

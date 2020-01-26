@@ -11,5 +11,8 @@ Implement the Methane Analytic Engine.
 
 # Analytic Functions
 # TODO
-def testAnalytic():
+def testAnalytic(M, analytic, latBox, lonBox):
+    '''
+    TODO
+    '''
     return {'TEST' : 'Should be a Test Result.'}

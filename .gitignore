@@ -42,3 +42,6 @@ nosetests.xml
 # Virtual Environment
 venv
 myVenv
+
+# Excessive Data
+data

@@ -1,0 +1,12 @@
+REST:
+    host: '0.0.0.0'
+    port: 8000
+
+model:
+    variables: ['Latitude', 'Longitude']
+    
+data:
+    path: '~/TropomiProject/MATH582/data'
+
+logging:
+    level: WARN

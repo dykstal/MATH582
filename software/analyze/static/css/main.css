@@ -1,0 +1,57 @@
+html {
+  margin-left: 25%;
+  margin-right: 25%;
+  margin-top: 2%;
+  margin-bottom: 2%;
+  background: url("../grad.jpeg") no-repeat center center fixed;
+  background-size: cover;
+}
+
+h1 {
+  text-align: center;
+}
+
+h2 {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+body {
+  background-color: white;
+  border-radius: 15px;
+  padding: 15px;
+}
+
+span {
+  color: red;
+}
+
+label, input {
+  margin: 5px;
+}
+
+textarea {
+  margin-top: 10px;
+}
+
+section {
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+img {
+  border-radius: 15px;
+  max-width:100%;
+  max-height:100%;
+  margin-bottom: 20px;
+}
+
+li {
+  list-style-type: square;
+  margin: 10px;
+}
+
+a {
+  margin-left: 25%;
+  margin-right: 25%;
+}

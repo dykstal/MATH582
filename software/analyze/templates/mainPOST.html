@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="author" content="Aidan Dykstal"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="../static/css/main.css" />
+    <title>TROPOMI Methane Analyzer Results</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+  </head>
+  <body>
+
+    <header>
+      <h1> TROPOMI Methane Analyzer Results </h1> <hr/>
+    </header>
+
+    <section>
+
+      <p><b> Title: </b> {{title}} </p>
+      <p><b> Author: </b> {{author}} </p>
+      <p><b> Test Result: </b> {{results['TEST']}} </p>
+      <ul> 
+        <li><i> Test Result: </i>{{results['TEST']}} </li>
+        <li><i> Test Result: </i>{{results['TEST']}} </li>
+        <li><i> Test Result: </i>{{results['TEST']}} </li> 
+      </ul>
+
+      <br/>
+      <br/>
+
+      <p><b> Test Visualization: </b></p>
+      <img src="{{image}}" id="test" alt="Test (Kernel Density Image)">
+      <br/>
+
+      <a href="./tropomi">Run another Analytic.</a>
+
+    </section>
+ 
+  </body>
+</html>

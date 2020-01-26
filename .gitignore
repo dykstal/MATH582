@@ -1,39 +1,44 @@
-# History files
-.Rhistory
-.Rapp.history
+# Python Cache
+*.py[cod]
 
-# Session Data files
-.RData
+# TeX, Aux, Log, and Out
+*.aux
+*.out
+*.log
 
-# User-specific files
-.Ruserdata
+# C extensions
+*.so
 
-# Example code in package build process
-*-Ex.R
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+__pycache__
 
-# Output files from R CMD build
-/*.tar.gz
+# Installer logs
+pip-log.txt
 
-# Output files from R CMD check
-/*.Rcheck/
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
 
-# RStudio files
-.Rproj.user/
+# Translations
+*.mo
 
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
+# VS Code
+.vscode
 
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
-
-# knitr and R markdown default cache directories
-*_cache/
-/cache/
-
-# Temporary files created by R markdown
-*.utf8.md
-*.knit.md
-
-# R Environment Variables
-.Renviron
+# Virtual Environment
+venv
+myVenv

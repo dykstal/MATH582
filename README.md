@@ -2,8 +2,8 @@
 This is a project repository presented by Aidan Dykstal for MATH 582 (STATISTICS PRACTICUM) at the Colorado School of Mines. The following sections detail how to run the service enclosed in this repository.
 
 ## Prerequisites
-- Python 3.6+
-- Python 3.6+ Development Tools
+- Python 3.6+.
+- Python 3.6+ Development Tools.
 
 For Ubuntu:
 ```

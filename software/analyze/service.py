@@ -35,10 +35,12 @@ class MethaneServiceAnalyzer(Resource):
     '''
     Perform Methane Analysis using the Data Analytics Engine.
     '''
+    def __init__(self, M):
+        self.M = M
+
     def post(self):
-        # TODO - replace this test with actual data analysis & visualization
-        results = analyzer.testAnalytic()
-        visualization = visualizer.testVisualizer()
+        results = analyzer.runAnalytic(self.M, analytic, latBox, lonBox)
+        visualization = visualizer.visualizeAnalytic(analytic, results)
         logger.info('MethaneServiceAnalyze -> POST \nResults: \n\t%s' % resp)
         return results, 200
 
@@ -91,8 +93,8 @@ class MethaneService(Resource):
             lonBox = (min(minLon, maxLon), max(minLon, maxLon))
 
             # Perform Data Analysis
-            results = analyzer.testAnalytic(self.M, analytic, latBox, lonBox)
-            visualization = visualizer.testVisualizer()
+            results = analyzer.runAnalytic(self.M, analytic, latBox, lonBox)
+            visualization = visualizer.visualizeAnalytic(analytic, results)
 
             # Post the Results and Visualizations to the Webpage
             POST_TEMPLATE_NAME = 'mainPOST.html'

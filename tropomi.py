@@ -9,6 +9,7 @@ import errno
 import argparse
 import logging
 import yaml
+import warnings
 
 # Import the Service Tools
 from software.analyze.service import MethaneService
@@ -57,6 +58,10 @@ def getConfig(args):
 
 # Create the Main Method for the Service
 if __name__ == '__main__':
+    # Supress Warnings
+    if not sys.warnoptions:
+        warnings.simplefilter('ignore')
+
     # Get the Parsed CLI Arguments
     args = parser.parse_args()
 

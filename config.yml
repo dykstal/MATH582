@@ -3,10 +3,16 @@ REST:
     port: 8000
 
 model:
-    variables: ['Latitude', 'Longitude']
-    
-data:
-    path: '~/TropomiProject/MATH582/data'
+    variables: ['latitude',
+                'longitude',
+                'time_utc',
+                'delta_time',
+                'qa_value',
+                'methane_mixing_ratio',
+                'methane_mixing_ratio_precision',
+                'methane_mixing_ratio_bias_corrected']
+    timeVariable: 'time_utc'
+    timeAggHours: 1
 
 logging:
     level: WARN

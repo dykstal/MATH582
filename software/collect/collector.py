@@ -5,6 +5,7 @@ Collects, Formats, and Returns the Collected Data for the Methane Analysis Servi
 
 # System Functions
 import os
+import json
 from datetime import datetime
 import netCDF4 as cdf
 import numpy as np
@@ -77,9 +78,11 @@ def aggregateDataByTime(M, config):
         for time in M[config['model']['timeVariable']]:
             dtObject = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.%fZ')
             epochTimes.append((dtObject - datetime(1970, 1, 1)).total_seconds())
+
         # Then, Create an Interval Size for Time Aggregations
         intervalSize = 3600.0 * config['model']['timeAggHours']
         leftEpochTimes = [time - min(epochTimes) for time in epochTimes]
+
         # Create Index Breakpoints at the Rate of the Aggregation Setting
         splitIndices = []
         timeToSplit = intervalSize
@@ -87,6 +90,7 @@ def aggregateDataByTime(M, config):
             if leftEpochTimes[i] >= timeToSplit:
                 splitIndices.append(i)
                 timeToSplit += intervalSize
+
         # Aggregate the Data between Each Index Breakpoint
         aggM = {}
         nonTimeKeys = [key for key in M.keys() if key != config['model']['timeVariable']]
@@ -97,6 +101,7 @@ def aggregateDataByTime(M, config):
                 aggData.append(np.mean(M[key][splitIndices[i]:splitIndices[i + 1]]))
             aggData.append(np.mean(M[key][splitIndices[-1]:]))
             aggM[key] = aggData
+
         # Add the Time Column Back in with the Start Time of Each Interval
         timeVariable = config['model']['timeVariable']
         aggM[timeVariable] = []
@@ -107,10 +112,32 @@ def aggregateDataByTime(M, config):
     else:
         return M
 
-# Class Function
-def getData(config):
+def writeDataToJSON(M, config):
     '''
-    Get the Collected, Cleaned, and Aggregated TROPOMI Data.
+    Write the Current Data Matrix to a JSON File for Quick Loading, if Enabled
+    from the Config File.
+
+    :param M: The Data Matrix Mapping Variable Names to Columns.
+    :param config: The Configuration Map for the Program Run.
+    :return: Nothing, but Write a JSON File to the Data Path.
+    '''
+    # Remove Non-JSON Serializable NumPy Datatypes
+    for key in M:
+        for i in range(len(M[key])):
+            if type(M[key][i]) is np.float32:
+                M[key][i] = float(M[key][i])
+            elif type(M[key][i]) is np.int32:
+                M[key][i] = int(M[key][i])
+
+    # Write the JSON File Output
+    if config['model']['writeJSON'] and config['model']['writeNameJSON']:
+        with open(os.path.join('data/', config['model']['writeNameJSON']), 'w') as fout:
+            json.dump(M, fout)
+
+# Class Functions
+def getDataFromNetCDF(config):
+    '''
+    Get the Collected, Cleaned, and Aggregated TROPOMI Data from NetCDF Files.
 
     :param config: The Dictionary of Configuration Settings from the YAML.
     :return: A Cleaned Model Matrix of Relevant Observations and Predictors.
@@ -127,7 +154,21 @@ def getData(config):
     mapData = temporallyReshapeData(collectedData)
 
     # Create the Model Matrix
-    M = aggregateDataByTime(M, config)
+    M = aggregateDataByTime(mapData, config)
+
+    # If Chosen by the Config, Write the Data to JSON
+    writeDataToJSON(M, config)
 
     # Return the Model Matrix
+    return M
+
+def getDataFromJSON(config):
+    '''
+    Get the Collected, Cleaned, and Aggregated TROPOMI Data from a Preformatted JSON.
+
+    :return: A Cleaned Model Matrix of Relevant Observations and Predictors.
+    '''
+    # Open the JSON File and Return the Data
+    with open(os.path.join('data/', config['model']['readNameJSON']), 'r') as fin:
+        M = json.load(fin)
     return M

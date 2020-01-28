@@ -10,7 +10,7 @@ import argparse
 import logging
 import yaml
 
-# TODO Import the Service Tools
+# Import the Service Tools
 from software.analyze.service import MethaneService
 from software.collect import collector
 
@@ -44,12 +44,15 @@ def getConfig(args):
     :return: A Dictionary Mapping Configuration Settings to their Options.
     '''
     config = {}
+    print('\nInitializing Configuration...')
     if args.config:
         with open(args.config, 'r') as ymlFile:
             config = yaml.load(ymlFile, yaml.SafeLoader)
+            print('Done!')
             return config
     else:
-        print('\nERROR : No Valid Configuration Specified.\n')
+        print('Failed.')
+        print('ERROR : No Valid Configuration Specified.\n')
         sys.exit(errno.EINVAL)
 
 # Create the Main Method for the Service
@@ -77,9 +80,17 @@ if __name__ == '__main__':
 
     # Get the Data for the Analysis Service
     try:
-        M = collector.getData(config)
+        if config['model']['readJSON']:
+            print('\nLoading Data from JSON...')
+            M = collector.getDataFromJSON(config)
+            print('Done!\n')
+        else:
+            print('\nLoading Data from NetCDF...')
+            M = collector.getDataFromNetCDF(config)
+            print('Done!\n')
     except:
-        print('\nERROR : No Data Supplied.\n')
+        print('Failed.')
+        print('ERROR : No Data Supplied.\n')
         sys.exit(errno.EINVAL)
 
     # Activate the Service

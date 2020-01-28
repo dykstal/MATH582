@@ -13,6 +13,10 @@ model:
                 'methane_mixing_ratio_bias_corrected']
     timeVariable: 'time_utc'
     timeAggHours: 1
+    readNameJSON: 'AidanData.json'
+    writeNameJSON: 'AidanData.json'
+    readJSON: True
+    writeJSON: False 
 
 logging:
     level: WARN

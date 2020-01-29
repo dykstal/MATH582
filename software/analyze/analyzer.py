@@ -5,6 +5,7 @@ Implement the Methane Analytic Engine.
 
 # System Functions
 import sys
+from software.analyze.AnomalyDetector import AnomalyDetector
 
 # Helper Functions
 def chooseAnalytic(analytic):
@@ -35,25 +36,29 @@ def enforceBoundingBox(M, latBox, lonBox):
     return M
 
 # Analytic Functions
-def runFaSTAnomalyDetector(M):
+def runFaSTAnomalyDetector(M, config):
     '''
     Runs the Anomaly Detector for the Methane Mixing Ratio given
     All Predictors in the Data Matrix.
 
     :param M: The Data Matrix.
+    :param config: The Configuration Map for the Program Run.
     :return: The Results of the Anomaly Detection.
     '''
-    # TODO
+    A = AnomalyDetector(config['AnomalyDetector']['windowSize'],
+                        config['AnomalyDetector']['threshold'])
+    nomalies, indexAnomalies, edges = A.detectAnomalies(M[config['model']['response']])
     return {'Test1' : 'Anomalies will be Found!',
             'Test2' : 'They will be Found at Places!',
             'Test3' : 'They will be Found at Times!'}
 
-def runRelevanceEstimator9000(M):
+def runRelevanceEstimator9000(M, config):
     '''
     Runs the Relevance Estimator for the Methane Mixing Ratio
     given All Predictors in the Data Matrix.
 
     :param M: The Data Matrix.
+    :param config: The Configuration Map for the Program Run.
     :return: The Results of the Anomaly Detection.
     '''
     # TODO
@@ -77,7 +82,7 @@ def runAnalytic(M, analytic, latBox, lonBox):
 
     # Run the Chosen Analytic with the Bounded Data
     if willUseAnomalyDetector:
-        results = runFaSTAnomalyDetector(boundedM)
+        results = runFaSTAnomalyDetector(boundedM, config)
     else:
-        results = runRelevanceEstimator9000(boundedM)
+        results = runRelevanceEstimator9000(boundedM, config)
     return results

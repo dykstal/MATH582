@@ -17,6 +17,11 @@ model:
     writeNameJSON: 'AidanData.json'
     readJSON: True
     writeJSON: False 
+    response: 'methane_mixing_ratio'
+
+AnomalyDetector:
+    windowSize: 1
+    threshold: 0.5
 
 logging:
     level: WARN

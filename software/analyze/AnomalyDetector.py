@@ -146,8 +146,42 @@ class AnomalyDetector:
         :param minDist: A Minimum Distance Between Peaks.
         :return: The Numeric Indices of the Peaks in the Response.
         '''
-        # TODO
-        return peakIndices
+        # Create the Threshold
+        thres = thres * (np.max(y) - np.min(y)) + np.min(y)
+        minDist = int(minDist)
+
+        # Compute the First Order Difference
+        dy = np.diff(y)
+
+        # Fill in All Plateau Pixels
+        zeros, = np.where(dy == 0)
+        while len(zeros):
+            # Add Pixels 2-by-2 to Propagate Left and Right Values onto the
+            # Zero-Value Pixel
+            zerosRight = np.hstack([dy[1:], 0.0])
+            zerosLeft = np.hstack([0.0, dy[:-1]])
+
+            # Replace the Zero with the Right-Value if it is Nonzero
+            dy[zeros] = zerosRight[zeros]
+            zeros, = np.where(dy == 0)
+
+        # Find the Peaks with the First Order Difference
+        peaks = np.where((np.hstack([dy, 0.0]) < 0.0)
+                         & (np.hstack([0.0, dy]) > 0.0)
+                         & (y > thres))[0]
+        if peaks.size > 1 and minDist > 1:
+            highestPeaks = peaks[np.argsort(y[peaks])][::-1]
+            remValues = np.ones(y.size, dtype = bool)
+            remValues[peaks] = False
+            for peak in highestPeaks:
+                if not remValues[peak]:
+                    peakSlice = slice(max(0, peak - minDist), peak + minDist + 1)
+                    remValues[peakSlice] = True
+                    remValues[peak] = False
+            peaks = np.arange(y.size)[~remValues]
+
+        # Return the Indices of the Peaks
+        return peaks
 
     def meanShiftFilter(self, s):
         '''
@@ -156,19 +190,39 @@ class AnomalyDetector:
         :param s: The Smoothed Response from the Hampel Filter.
         :return: The Array of Anomalies from Mean Shift.
         '''
-        # TODO
-        return meanShifts
+        # Build an Edge Detecting Kernel from the First Derivative of the
+        # Gaussian Distribution PDF
+        window = int(np.min([np.round(0.03 * len(s)), self.windowSize]))
+        K = np.concatenate((np.ones(window), -1 * np.ones(window)))
 
-    def findAllAnomalies(self, h, ms):
+        # Convolve the Kernel with the Data
+        # Peaks in the Signal Indicate Mean Shifts
+        edgeDetector = np.abs(np.convolve(s, K, mode = 'same'))
+        edgeDetector = np.append(edgeDetector, 0)
+        newOutliers = self.peakFilter(edgeDetector)
+        if len(np.where(newOutliers == len(s) - 1)[0]) > 0:
+            newOutliers = np.delete(newOutliers,
+                                    np.argwhere(newOutliers == len(s) - 1))
+        return newOutliers, edgeDetector
+
+    def findAllAnomalies(self, y, h, ms):
         '''
         Create a List of All Anomalies from the Hampel Filter and Mean
         Shift Detection Methods.
 
+        :param y: The Response Array.
         :param h: The Outlier Array from the Hampel Filter Method.
         :param ms: The Outlier Array from the Mean Shift Method.
         :return: The Outlier Array between Both Methods.
         '''
-        # TODO
+        # Create the List of Anomalies from the Mean Shift Filter
+        msList = np.zeros(y.size)
+        msList[ms] = 1
+
+        # Combine the Lists of Anomalies
+        anomalies = np.zeros(y.size)
+        for i in range(y.size):
+            anomalies[i] = msList[i] + h[i]
         return anomalies
 
     def findAnomalyIndices(self, anomalies):
@@ -178,7 +232,8 @@ class AnomalyDetector:
         :param anomalies: The List of All Anomalies between Methods.
         :return: The Indices in the Response that are Anomalous.
         '''
-        # TODO
+        # Find the Indices of All Anomalies in the Response
+        indexAnomalies = [i for i in range(anomalies.size) if anomalies[i] > 0]
         return indexAnomalies
 
     def detectAnomalies(self, y):
@@ -210,6 +265,6 @@ class AnomalyDetector:
         meanShiftAnomalies, edges = self.meanShiftFilter(ySmoothed)
 
         # Summarize Anomalies and Indices of Appearance
-        anomalies = findAllAnomalies(hampelAnomalies, meanShiftAnomalies)
+        anomalies = findAllAnomalies(self.y, hampelAnomalies, meanShiftAnomalies)
         indexAnomalies = findAnomalyIndices(anomalies)
         return anomalies, indexAnomalies, edges

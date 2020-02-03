@@ -47,10 +47,10 @@ def runFaSTAnomalyDetector(M, config):
     '''
     A = AnomalyDetector(config['AnomalyDetector']['windowSize'],
                         config['AnomalyDetector']['threshold'])
-    nomalies, indexAnomalies, edges = A.detectAnomalies(M[config['model']['response']])
-    return {'Test1' : 'Anomalies will be Found!',
-            'Test2' : 'They will be Found at Places!',
-            'Test3' : 'They will be Found at Times!'}
+    anomalies, indexAnomalies, edges = A.detectAnomalies(M[config['model']['response']])
+    return {'Test1' : anomalies,
+            'Test2' : indexAnomalies,
+            'Test3' : edges}
 
 def runRelevanceEstimator9000(M, config):
     '''

@@ -8,6 +8,8 @@ import sys
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
+#from mpl_toolkits.basemap import Basemap
 
 # Helper Functions
 # TODO - REMOVE ME
@@ -37,41 +39,6 @@ def craftKernelImage():
     g.savefig('software/analyze/static/images/%s' % FIG_NAME)
     return FIG_NAME
 
-def chooseAnalytic(analytic):
-    '''
-    Routes the Analytic Visualization toward the Selected Feature.
-
-    :param analytic: The String Name of the Full Analytic.
-    :return: True for the Anomaly Detector, False for the Relevance Estimator.
-    '''
-    if analytic == 'FaST Anomaly Detector':
-        return True
-    elif analytic == 'Relevance Estimator 9000':
-        return False
-    else:
-        sys.exit('\nError : No Valid Analytic Selected.\n')
-
-# Visualization Functions
-def visualizeFaSTAnomalyDetector(results):
-    '''
-    Craft the Visualization of Anomaly Detection Results.
-
-    :param results: The Map of Results from the Anomaly Detector.
-    :return: The Saved Visualization Filename to the Web Interface.
-    '''
-    # TODO
-    return craftKernelImage()
-
-def visualizeRelevanceEstimator9000(results):
-    '''
-    Craft the Visualization of Relevance Estimation Results.
-
-    :param results: The Map of Results from the Relevance Estimator.
-    :return: The Saved Visualization Filename to the Web Interface.
-    '''
-    # TODO
-    return craftKernelImage()
-
 def visualizeAnalytic(analytic, results):
     '''
     Visualize the Results of the Selected Analytic in a Nice Geospatial Plot.
@@ -81,9 +48,24 @@ def visualizeAnalytic(analytic, results):
     :return: The Saved Visualization Filename to the Web Interface.
     '''
     # Choose and Visualize the Selected Analytic
-    willVisualizeAnomalyDetector = chooseAnalytic(analytic)
-    if willVisualizeAnomalyDetector:
-        imageName = visualizeFaSTAnomalyDetector(results)
+    imageName = craftKernelImage()
+
+    #fig = plt.figure(figsize=(8, 8))
+    #m = Basemap(projection='lcc', resolution=None,
+    #                        width=8E6, height=8E6,
+    #                        lat_0=45, lon_0=-100,)
+    #m.etopo(scale=0.5, alpha=0.5)
+
+    # Map (long, lat) to (x, y) for plotting
+    #x, y = m(-100, 100)
+    #plt.plot(x, y, 'ok', markersize=5)
+    #plt.text(x, y, '  Anomaly 1', fontsize=12)
+    #plt.savefig('test.png')
+    if analytic == 'Local Outlier Factor':
+        return 'LOF.png'
+    elif analytic == 'Autoencoder':
+        return 'Autoencoder.png'
+    elif analytic == 'Isolation Forest':
+        return 'IsoForest.png'
     else:
-        imageName = visualizeRelevanceEstimator9000(results)
-    return imageName
+        return 'LOF.png'

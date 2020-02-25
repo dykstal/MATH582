@@ -19,18 +19,22 @@
 	    <p><b> Selected Analytic: </b> {{analytic}} </p>
 	    <p><b> Latitude Bounding Box: </b> ({{minLat}}, {{maxLat}}) </p>
 	    <p><b> Longitude Bounding Box: </b> ({{minLon}}, {{maxLon}}) </p>
-      <p><b> Analytic Results: </b></p>
+	    <p><b> Start Date: </b> {{startDate}} </p>
+	    <p><b> End Date: </b> {{endDate}} </p>
+      <p><b> Top Five Anomalies: </b></p>
       <ul> 
-        <li><i> (a)    </i>{{results['Test1']}} </li>
-        <li><i> (b)    </i>{{results['Test2']}} </li>
-        <li><i> (c)    </i>{{results['Test3']}} </li> 
+        <li><i> (a)    </i>{{results[1]}} </li>
+        <li><i> (b)    </i>{{results[2]}} </li>
+        <li><i> (c)    </i>{{results[3]}} </li> 
+        <li><i> (d)    </i>{{results[4]}} </li> 
+        <li><i> (e)    </i>{{results[5]}} </li> 
       </ul>
 
       <br/>
       <br/>
 
-      <p><b> Test Visualization: </b></p>
-      <img src="{{image}}" id="test" alt="Test (Kernel Density Image)">
+      <p><b> Anomalies Plotted: </b></p>
+      <img src="{{image}}" id="test" alt="Anomalies Plotted on the Region">
       <br/>
 
       <a href="./tropomi">Run another Analytic.</a>

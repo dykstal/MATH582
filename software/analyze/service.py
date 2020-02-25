@@ -6,6 +6,7 @@ The REST Service Entry Point for the Methane Analysis Service.
 # System Functions
 import os
 import logging
+import datetime as dt
 logger = logging.getLogger(__name__)
 
 # RESTful Framework from Flask
@@ -89,11 +90,19 @@ class MethaneService(Resource):
                 maxLon = float(request.form['maxLon'])
             else:
                 maxLon = 180.0
+            if request.form['startDate'] != '':
+                startDate = request.form['startDate']
+            else:
+                startDate = '2010-01-01'
+            if request.form['endDate'] != '':
+                endDate = request.form['endDate']
+            else:
+                endDate = dt.datetime.now().strftime('%Y-%m-%d')
             latBox = (min(minLat, maxLat), max(minLat, maxLat))
             lonBox = (min(minLon, maxLon), max(minLon, maxLon))
 
             # Perform Data Analysis
-            results = analyzer.runAnalytic(self.M, analytic, latBox, lonBox)
+            results = analyzer.runAnalytic(self.M, analytic, self.config, latBox, lonBox, startDate, endDate)
             visualization = visualizer.visualizeAnalytic(analytic, results)
 
             # Post the Results and Visualizations to the Webpage
@@ -105,6 +114,8 @@ class MethaneService(Resource):
                                    maxLat = ('%.3f' % maxLat),
                                    minLon = ('%.3f' % minLon),
                                    maxLon = ('%.3f' % maxLon),
+                                   startDate = startDate,
+                                   endDate = endDate,
                                    results = results,
                                    image = IMAGE_PATH)
 

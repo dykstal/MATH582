@@ -85,16 +85,21 @@ if __name__ == '__main__':
 
     # Get the Data for the Analysis Service
     try:
-        if config['model']['readJSON']:
-            print('\nLoading Data from JSON...')
-            M = collector.getDataFromJSON(config)
+        if config['model']['readh5File']:
+            print('\nLoading Data from H5...')
+            M = collector.getDataFromH5(config)
+            print('Done!\n')
+        elif config['model']['readRDataFile']:
+            print('\nLoading Data from RData...')
+            M = collector.getDataFromRData(config)
             print('Done!\n')
         else:
             print('\nLoading Data from NetCDF...')
             M = collector.getDataFromNetCDF(config)
             print('Done!\n')
-    except:
+    except Exception as e:
         print('Failed.')
+        print(e)
         print('ERROR : No Data Supplied.\n')
         sys.exit(errno.EINVAL)
 

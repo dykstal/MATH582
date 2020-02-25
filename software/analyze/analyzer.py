@@ -5,22 +5,41 @@ Implement the Methane Analytic Engine.
 
 # System Functions
 import sys
+import errno
+import numpy as np
 from software.analyze.AnomalyDetector import AnomalyDetector
 
 # Helper Functions
-def chooseAnalytic(analytic):
+def _dateToTime(dateString):
+    '''
+    Converts %Y-%m-%d to Seconds since 2010-01-01.
+
+    :param dateString: A Valid Date String.
+    :return: The Number of Seconds from that Date to 2010-01-01.
+    '''
+    dateStringDT = dt.datetime.strptime(dateString, '%Y-%m-%d')
+    return (dateStringDT - dt.datetime(2010, 1, 1)).total_seconds()
+
+def chooseAnalytic(analytic, config):
     '''
     Routes the Analytic Run toward the Selected Feature.
 
     :param analytic: The String Name of the Full Analytic.
-    :return: True for the Anomaly Detector, False for the Relevance Estimator.
+    :param config: The Configuration Settings.
+    :return: Updated Configuration Settings.
     '''
-    if analytic == 'FaST Anomaly Detector':
-        return True
-    elif analytic == 'Relevance Estimator 9000':
-        return False
+    if analytic == 'Local Outlier Factor':
+        config['AnomalyDetector']['method'] = analytic
+        return config
+    elif analytic == 'Isolation Forest':
+        config['AnomalyDetector']['method'] = analytic
+        return config
+    elif analytic == 'Autoencoder':
+        config['AnomalyDetector']['method'] = analytic
+        return config
     else:
-        sys.exit('\nError : No Valid Analytic Selected.\n')
+        print('\nError : No Valid Analytic Selected.\n')
+        sys.exit(errno.EINVAL)
 
 def enforceBoundingBox(M, latBox, lonBox):
     '''
@@ -32,41 +51,43 @@ def enforceBoundingBox(M, latBox, lonBox):
     :param lonBox: The Bounding Longitudes.
     :return: The Data Matrix with Only Data Inside the Bounding Box.
     '''
-    # TODO
-    return M
+    indicesToKeep = [i for i in range(M['latitude'].shape[0]) \
+                     if latBox[0] <= M['latitude'][i] and latBox[1] >= M['latitude'][i] \
+                     and lonBox[0] <= M['longitude'][i] and lonBox[1] >= M['longitude'][i]]
+    newM = {}
+    for key in M:
+        if M[key].shape[0] == M['latitude'].shape[0]:
+            newM[key] = np.array([M[key][i] for i in indicesToKeep])
+        else:
+            newM[key] = M[key]
+    return newM
 
-# Analytic Functions
-def runFaSTAnomalyDetector(M, config):
+def enforceDateFilter(M, startDate, endDate):
     '''
-    Runs the Anomaly Detector for the Methane Mixing Ratio given
-    All Predictors in the Data Matrix.
+    Filters Data to Fall between a Start and End Date.
 
-    :param M: The Data Matrix.
-    :param config: The Configuration Map for the Program Run.
-    :return: The Results of the Anomaly Detection.
+    :param config: The Configuration Dictionary from YAML.
+    :param M: The Model Variable Map.
+    :return: The Data Map between the Start and End Dates from Configuration.
     '''
-    A = AnomalyDetector(config['AnomalyDetector']['windowSize'],
-                        config['AnomalyDetector']['threshold'])
-    anomalies, indexAnomalies, edges = A.detectAnomalies(M[config['model']['response']])
-    return {'Test1' : anomalies,
-            'Test2' : indexAnomalies,
-            'Test3' : edges}
+    try:
+        startTime = _dateToTime(startDate)
+    except:
+        startTime = 0.0
+    try:
+        endTime = _dateToTime(endDate)
+    except:
+        endTime = 1e20
+    indicesToKeep = [i for i in range(M['time'].shape[0]) if i >= startTime and i <= endTime]
+    newM = {}
+    for key in M:
+        if M[key].shape[0] == M['time'].shape[0]:
+            newM[key] = np.array([M[key][:][i] for i in indicesToKeep])
+        else:
+            newM[key] = M[key][:]
+    return newM
 
-def runRelevanceEstimator9000(M, config):
-    '''
-    Runs the Relevance Estimator for the Methane Mixing Ratio
-    given All Predictors in the Data Matrix.
-
-    :param M: The Data Matrix.
-    :param config: The Configuration Map for the Program Run.
-    :return: The Results of the Anomaly Detection.
-    '''
-    # TODO
-    return {'Test1' : 'Relevant Indicators will be Found!',
-            'Test2' : 'They will be XX% Relevant!',
-            'Test3' : 'They will be Most Relevant at Places/Times!'}
-
-def runAnalytic(M, analytic, latBox, lonBox):
+def runAnalytic(M, analytic, config, latBox, lonBox, startDate, endDate):
     '''
     Runs the Selected Analytic and Returns Valid Results.
 
@@ -77,12 +98,13 @@ def runAnalytic(M, analytic, latBox, lonBox):
     :return: Results of the Selected Analytic.
     '''
     # Choose an Analytic and Enforce the Bounding Box
-    willUseAnomalyDetector = chooseAnalytic(analytic)
-    boundedM = enforceBoundingBox(M, latBox, lonBox)
+    if latBox is not None and lonBox is not None:
+        M = enforceBoundingBox(M, latBox, lonBox)
+    if startDate is not None and endDate is not None:
+        M = enforceDateFilter(M, startDate, endDate)
+    AD = AnomalyDetector(chooseAnalytic(analytic, config), M)
 
     # Run the Chosen Analytic with the Bounded Data
-    if willUseAnomalyDetector:
-        results = runFaSTAnomalyDetector(boundedM, config)
-    else:
-        results = runRelevanceEstimator9000(boundedM, config)
+    results = AD.detectAnomalies()
+    print(results)
     return results

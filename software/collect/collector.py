@@ -5,22 +5,61 @@ Collects, Formats, and Returns the Collected Data for the Methane Analysis Servi
 
 # System Functions
 import os
+import sys
+import glob
+import errno
+import pdb
+import pickle
 import json
-from datetime import datetime
-import netCDF4 as cdf
+
+# Data-Related Functions
 import numpy as np
+import datetime as dt
+from h5py import File
+from netCDF4 import Dataset
+import rpy2.robjects as R
 
 # Helper Functions
+def _dateToTime(dateString):
+    '''
+    Converts %Y-%m-%d to Seconds since 2010-01-01.
+
+    :param dateString: A Valid Date String.
+    :return: The Number of Seconds from that Date to 2010-01-01.
+    '''
+    dateStringDT = dt.datetime.strptime(dateString, '%Y-%m-%d')
+    return (dateStringDT - dt.datetime(2010, 1, 1)).total_seconds()
+
+def applyDateFilter(config, M):
+    '''
+    Filters Data to Fall between a Start and End Date.
+
+    :param config: The Configuration Dictionary from YAML.
+    :param M: The Model Variable Map.
+    :return: The Data Map between the Start and End Dates from Configuration.
+    '''
+    if config['model']['startDate'] is not None and config['model']['endDate'] is not None:
+        startTime = _dateToTime(config['model']['startDate'])
+        endTime = _dateToTime(config['model']['endDate'])
+        indicesToKeep = [i for i in range(M['time'].shape[0]) if i >= startTime and i <= endTime]
+        newM = {}
+        for key in M:
+            if M[key].shape[0] == M['time'].shape[0]:
+                newM[key] = np.array([M[key][:][i] for i in indicesToKeep])
+            else:
+                newM[key] = M[key][:]
+        return newM
+    else:
+        return {key: M[key][:] for key in M}
+
 def getNCs():
     '''
     Get a List of Paths to Every Orbit NetCDF File.
 
     :return: A List of all the NetCDF Files.
     '''
-    for root, dirs, files in os.walk('data/', topdown = True):
-        ncList = [os.path.join(root, file) for file in files \
-                  if file.endswith('.nc')]
-    return ncList
+    filePath = 'data/'
+    return [os.path.join(filePath, f) for f in os.listdir(filePath) if f.endswith('.nc')]
 
 def collectData(config, ncList):
     '''
@@ -30,109 +69,124 @@ def collectData(config, ncList):
     :param ncList: A List of All Data NetCDF Files.
     :return: A Map of Variable Names to a List of their NetCDF Data Structures.
     '''
-    modelVariables = config['model']['variables']
-    collectedData = {}
-    for var in modelVariables:
-        variableData = []
-        for ncFile in ncList:
-            try:
-                variableData.append(cdf.Dataset(ncFile).groups['PRODUCT'].variables[var][:])
-            except:
-                pass
-        collectedData[var] = variableData
-    return collectedData
+    # Find Region Name and Lat/Lon Bounding Box from Configuration
+    regionName = config['model']['regionName']
+    latLower = config['model']['latLower']
+    latUpper = config['model']['latUpper']
+    lonLower = config['model']['lonLower']
+    lonUpper = config['model']['lonUpper']
 
-def temporallyReshapeData(data):
-    '''
-    Shape the Data into Continuous Arrays of the Same Size, in Chronological Order.
+    # Get All the Variables we want to Copy, Separated by NetCDF Group
+    prodVars = config['model']['prodVars']
+    geoVars = config['model']['geoVars']
+    detailedVars = config['model']['detailedVars']
+    inputVars = config['model']['inputVars']
 
-    :param data: The Collected Data to be Temporally Reshaped.
-    :return: A Dictionary Mapping Variable Names to their Temporal Reshapings.
-    '''
-    # Create Stacked Columns of Raw Data by Taking Row Means
-    stackedColMap = {}
-    for var in data.keys():
-        stackedCol = []
-        for vari in data[var]:
-            if len(np.shape(vari)) == 3:
-                for i in range(np.shape(vari)[1]):
-                    stackedCol.append(np.mean(vari[:, i, :]))
-            elif len(np.shape(vari)) == 2:
-                for value in vari[0][:]:
-                    stackedCol.append(value)
-        stackedColMap[var] = stackedCol
-    return stackedColMap
+    # Create a Universal Map of All Variables to Copy
+    # Map Variable Names to Empty Collection
+    allVars = []
+    allVars.extend([(u'PRODUCT/' + v) for v in prodVars])
+    allVars.extend([(u'PRODUCT/SUPPORT_DATA/GEOLOCATIONS/' + v) for v in geoVars])
+    allVars.extend([(u'PRODUCT/SUPPORT_DATA/DETAILED_RESULTS/' + v) for v in detailedVars])
+    allVars.extend([(u'PRODUCT/SUPPORT_DATA/INPUT_DATA/' + v) for v in inputVars])
+    varMap = dict.fromkeys([v.split('/')[-1] for v in allVars])
+    TO_SKIP = ['PRODUCT/time_utc',
+               u'PRODUCT/SUPPORT_DATA/GEOLOCATIONS/latitude_bounds',
+               u'PRODUCT/SUPPORT_DATA/GEOLOCATIONS/longitude_bounds']
 
-def aggregateDataByTime(M, config):
-    '''
-    Aggregate a Model Matrix by Some Unit of Times, for Instance Days.
+    # Create Data Structures for Storing Data in Spatial Order
+    for v in varMap.keys():
+        varMap[v] = []
+    varMap['latLowLeft'] = []
+    varMap['lonLowLeft'] = []
+    varMap['latLowRight'] = []
+    varMap['lonLowRight'] = []
+    varMap['latUpRight'] = []
+    varMap['lonUpRight'] = []
+    varMap['latUpLeft'] = []
+    varMap['lonUpLeft'] = []
+    areObs = False
 
-    :param M: The Model Matrix to be Aggregated by Time.
-    :param config: The Configuration Map for the Program Run.
-    :return: A Model Matrix Aggregated by the Configured Time Scale.
-    '''
-    # If a Time-Aggregation Setting is Specified, then Aggregate
-    if config['model']['timeAggHours'] and config['model']['timeVariable']:
-        # First, Find the Seconds Since 1970
-        epochTimes = []
-        for time in M[config['model']['timeVariable']]:
-            dtObject = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.%fZ')
-            epochTimes.append((dtObject - datetime(1970, 1, 1)).total_seconds())
+    # Find the Values for All Variables
+    numDone = 0
+    numTotal = len(ncList)
+    for fileName in ncList:
+        print('Processing %s...' % fileName)
+        ncFile = Dataset(fileName, 'r')
 
-        # Then, Create an Interval Size for Time Aggregations
-        intervalSize = 3600.0 * config['model']['timeAggHours']
-        leftEpochTimes = [time - min(epochTimes) for time in epochTimes]
+        # Get Key Space/Time Information; Pass Over Empty Files
+        try:
+            lat = ncFile['PRODUCT/latitude'][:].data[0].flatten()
+            lon = ncFile['PRODUCT/longitude'][:].data[0].flatten()
+            sd = dt.datetime(2010, 1, 1) + dt.timedelta(seconds = int(ncFile['PRODUCT/time'][:].data[0]))
+        except KeyError as ke:
+            numTotal -= 1
+            continue
 
-        # Create Index Breakpoints at the Rate of the Aggregation Setting
-        splitIndices = []
-        timeToSplit = intervalSize
-        for i in range(len(leftEpochTimes)):
-            if leftEpochTimes[i] >= timeToSplit:
-                splitIndices.append(i)
-                timeToSplit += intervalSize
+        # Find Indices of Spatial Locations in the Data (within the Bounding Box)
+        # If they Exist, Collect Time-Space Data in Detail
+        locInds = np.where((lon > lonLower) * (lon < lonUpper) * (lat > latLower) * (lat < latUpper))[0]
+        if len(locInds) > 0:
+            areObs = True
+            time = []
+            for t in ncFile['PRODUCT/delta_time'][:].data[0]:
+                # Get the Detailed Time Data (Seconds since 2010-01-01)
+                time.extend([(sd + dt.timedelta(seconds = int(t) / 1e3)) \
+                             for i in range(ncFile['PRODUCT/latitude'][:].data[0].shape[1])])
+            time = np.array(time)
 
-        # Aggregate the Data between Each Index Breakpoint
-        aggM = {}
-        nonTimeKeys = [key for key in M.keys() if key != config['model']['timeVariable']]
-        for key in nonTimeKeys:
-            aggData = []
-            aggData.append(np.mean(M[key][0:splitIndices[0]]))
-            for i in range(0, len(splitIndices) - 1):
-                aggData.append(np.mean(M[key][splitIndices[i]:splitIndices[i + 1]]))
-            aggData.append(np.mean(M[key][splitIndices[-1]:]))
-            aggM[key] = aggData
+            # Create an H5 File to Store Results more Concisely
+            h5Name = 'tropomi_samples_' + regionName + '_' + time[0].strftime('%Y%m%d%H%M%S')
+            h5Name += ('_' + time[-1].strftime('%Y%m%d%H%M%S') + '.h5')
+            if os.path.exists(h5Name):
+                os.remove(h5Name)
 
-        # Add the Time Column Back in with the Start Time of Each Interval
-        timeVariable = config['model']['timeVariable']
-        aggM[timeVariable] = []
-        aggM[timeVariable].append(M[timeVariable][0])
-        for i in splitIndices:
-            aggM[timeVariable].append(M[timeVariable][i])
-        return aggM
-    else:
-        return M
+            # Get/Add the Detailed Spatial Data
+            latStar = ncFile[u'PRODUCT/SUPPORT_DATA/GEOLOCATIONS/latitude_bounds'][:].data[0]
+            lonStar = ncFile[u'PRODUCT/SUPPORT_DATA/GEOLOCATIONS/longitude_bounds'][:].data[0]
+            varMap['latLowLeft'] = latStar[:,:,0].flatten()[locInds]
+            varMap['lonLowLeft'] = lonStar[:,:,0].flatten()[locInds]
+            varMap['latLowRight'] = latStar[:,:,1].flatten()[locInds]
+            varMap['lonLowRight'] = lonStar[:,:,1].flatten()[locInds]
+            varMap['latUpRight'] = latStar[:,:,2].flatten()[locInds]
+            varMap['lonUpRight'] = lonStar[:,:,2].flatten()[locInds]
+            varMap['latUpLeft'] = latStar[:,:,3].flatten()[locInds]
+            varMap['lonUpLeft'] = lonStar[:,:,3].flatten()[locInds]
 
-def writeDataToJSON(M, config):
-    '''
-    Write the Current Data Matrix to a JSON File for Quick Loading, if Enabled
-    from the Config File.
+            # Add the Detailed Time Data
+            for v in allVars:
+                vTrunc = v.split('/')[-1]
+                if v == 'PRODUCT/time':
+                    varMap[vTrunc].extend(np.array([(t - dt.datetime(2010, 1, 1)).total_seconds() \
+                                                    for t in time[locInds]]))
+                elif v in TO_SKIP:
+                    continue
+                else:
+                    varMap[vTrunc].extend(ncFile[v][:].data[0].flatten()[locInds])
+            numDone += 1
+            print('Done [%d/%d]' % (numDone, numTotal))
 
-    :param M: The Data Matrix Mapping Variable Names to Columns.
-    :param config: The Configuration Map for the Program Run.
-    :return: Nothing, but Write a JSON File to the Data Path.
-    '''
-    # Remove Non-JSON Serializable NumPy Datatypes
-    for key in M:
-        for i in range(len(M[key])):
-            if type(M[key][i]) is np.float32:
-                M[key][i] = float(M[key][i])
-            elif type(M[key][i]) is np.int32:
-                M[key][i] = int(M[key][i])
+    # Error Out if no Data was Found
+    if not areObs:
+        print('Exiting: No Observations Found.')
+        sys.exit(errno.EINVAL)
 
-    # Write the JSON File Output
-    if config['model']['writeJSON'] and config['model']['writeNameJSON']:
-        with open(os.path.join('data/', config['model']['writeNameJSON']), 'w') as fout:
-            json.dump(M, fout)
+    # Otherwise, Write to the Specified H5 Outfile
+    h5FileName = config['model']['h5FileName']
+    h5Out = File(os.path.join('data/', h5FileName), 'w')
+    for v in allVars:
+        if v in TO_SKIP:
+            continue
+        vTrunc = v.split('/')[-1]
+        h5Out.create_dataset(vTrunc, data = varMap[vTrunc][:])
+    for corner in ['LowLeft', 'LowRight', 'UpLeft', 'UpRight']:
+        for l in ['lat', 'lon']:
+            h5Out.create_dataset(l + corner, data = varMap[l + corner][:])
+    h5Out.close()
+
+    # Return the Data Map
+    M = File(os.path.join('data/', h5FileName), 'r+')
+    return M
 
 # Class Functions
 def getDataFromNetCDF(config):
@@ -148,27 +202,50 @@ def getDataFromNetCDF(config):
         raise ValueError
 
     # Collect the Data
-    collectedData = collectData(config, ncList)
+    M = collectData(config, ncList)
 
-    # Aggregate the Data by Day
-    mapData = temporallyReshapeData(collectedData)
+    # Apply a Date Filter to the Data
+    M = applyDateFilter(config, M)
 
-    # Create the Model Matrix
-    M = aggregateDataByTime(mapData, config)
-
-    # If Chosen by the Config, Write the Data to JSON
-    writeDataToJSON(M, config)
-
-    # Return the Model Matrix
+    # Return the Model Data
     return M
 
-def getDataFromJSON(config):
+def getDataFromH5(config):
     '''
-    Get the Collected, Cleaned, and Aggregated TROPOMI Data from a Preformatted JSON.
+    Get the Collected, Cleaned, and Aggregated TROPOMI Data from a Preformatted H5 File.
 
+    :param config: The Dictionary of Configuration Settings from the YAML.
     :return: A Cleaned Model Matrix of Relevant Observations and Predictors.
     '''
-    # Open the JSON File and Return the Data
-    with open(os.path.join('data/', config['model']['readNameJSON']), 'r') as fin:
-        M = json.load(fin)
+    # Open the H5 File and Return the Data
+    try:
+        M = File(os.path.join('data/', config['model']['h5FileName']), 'r+')
+    except OSError as fe:
+        print('No H5 File Written Yet - Reading from NetCDF')
+        M = getDataFromNetCDF(config)
+
+    # Apply a Date Filter to the Data
+    M = applyDateFilter(config, M)
+    return M
+
+def getDataFromRData(config):
+    '''
+    Get the Collected, Cleaned, and Aggregated TROPOMI Data from a Preformatted RData File.
+
+    :param config: The Dictionary of Configuration Settings from the YAML.
+    :return: A Cleaned Model Matrix of Relevant Observations and Predictors.
+    '''
+    # Open the RData File and Return the Data
+    try:
+        R.r['load'](os.path.join('data/', config['model']['RDataFileName']))
+        RData = robjects.globalenv[config['model']['RDataFrameName']]
+        names = np.array(RData.names)
+        values = np.array(R.r[config['model']['RDataFrameName']])
+        M = {names[i]: values[i, :] for i in range(names.shape[0])}
+    except Exception as fe:
+        print('No RData File Resides in the /data Directory')
+        sys.exit(errno.EINVAL)
+
+    # Apply a Date Filter to the Data
+    M = applyDateFilter(config, M)
     return M

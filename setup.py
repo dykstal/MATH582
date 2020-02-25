@@ -31,7 +31,7 @@ def getRequirements():
 # Installation
 setup(
     name = 'TROPOMI_SERVICE',
-    version = '0.0.1',
+    version = '0.1.0',
     python_requires = '==3.6',
     description = description,
     long_description = longDescription,

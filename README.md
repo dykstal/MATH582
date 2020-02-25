@@ -1,5 +1,10 @@
 # TROPOMI Methane Analysis Service
-This is a project repository presented by Aidan Dykstal for MATH 582 (STATISTICS PRACTICUM) at the Colorado School of Mines. The following sections detail how to run the service enclosed in this repository.
+*Aidan Dykstal*
+This is a project repository for MATH 582 (STATISTICS PRACTICUM) at the Colorado School of Mines. The code within creates a web-interfaced service used for detecting anomalies in tropospheric methane (as detected by the TROPOMI instrument). Three analytics are supported for anomaly detection now:
+- Local Outlier Factor
+- Isolation Forest
+- Autoencoder
+Hyperparameters and customization settings can be applied to these analytics and the raw data they apply to by modifying the configuration YAML file `config.yml`.
 
 ## Prerequisites
 - Python 3.6+.

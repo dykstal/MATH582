@@ -4,9 +4,11 @@ Create a Class to Implement and Execute Anomaly Detection Activities.
 '''
 
 # System Functions
-import numpy as np
+import os
 import sys
 import errno
+import json
+import numpy as np
 
 # Analytic Functions
 from sklearn.neighbors import LocalOutlierFactor
@@ -24,31 +26,109 @@ class AnomalyDetector:
         The Default Constructor.
         '''
         self.config = config
-        self.M = M
+        self.M = {'methane_mixing_ratio_bias_corrected': np.array([1,2,3,4,5]),
+                  'latitude': np.array([1,2,3,4,5]),
+                  'longitude': np.array([1,2,3,4,5])}
+        self.y = self.M[self.config['model']['response']]
+
+    def removeCommonData(self, spreadStatistic, threshold):
+        '''
+        Get Rid of Data within One Standard Deviation of the Mean.
+
+        Return the Reduced Data and the Indices of the Reduced Data in the Original Data.
+        '''
+        # Calculate the Sample Spread Statistic
+        if spreadStatistic == 'IQR':
+            ySpread = np.quantile(self.y, 0.75) - np.quantile(self.y, 0.25)
+        elif spreadStatistic == 'StandardDeviation':
+            ySpread = numpy.std(self.y)
+        elif spreadStatistic == 'MAD':
+            ySpread = np.mean(np.absolute(self.y - mean(self.y)))
+        else:
+            print('No Valid Spread Statistic Selected')
+            sys.exit(errno.EINVAL)
+
+        # Kill Data that are within 1 `spreadStatistic` of the Mean
+        yMean = np.mean(self.y)
+        yStar = [] 
+        idxList = []
+        for idx in range(self.y.shape[0]):
+            if np.abs(self.y[idx] - yMean) >= (threshold * ySpread):
+                yStar.append(self.y[idx])
+                idxList.append(idx)
+        return yStar, idxList
 
     def detectWithLocalOutlierFactor(self):
         '''
-        TODO: Write Some Stuff.
+        Apply the Local Outlier Factor.
         '''
         # Find Model Hyperparameters
-        hyperParams = self.config['AnomalyDetector']['LocalOutlierFactorHyperparameters']
-        return [(-70.154, 35.506), (-100.937, 40.145), (-101.436, 30.123), (-102.567, 45.546), (-110.426, 51.566)]
+        hpMap = self.config['AnomalyDetector']['LocalOutlierFactorHyperparameters']
+        
+        # Get the Thresholded Response
+        yStar, idxList = self.removeCommonData(hpMap['spreadStatistic'], hpMap['threshold'])
+        yStar = [[elem] for elem in yStar]
+
+        # Instantiate the Local Outlier Factor
+        LOF = LocalOutlierFactor(n_neighbors = hpMap['numNeighbors'],
+                                 algorithm = hpMap['algorithm'],
+                                 leaf_size = hpMap['leafSize'],
+                                 metric = hpMap['metric'],
+                                 p = hpMap['p'])
+
+        # Fit and Predict with the Local Outlier Factor
+        predictions = LOF.fit_predict(yStar)
+        scores = LOF.negative_outlier_factor_
+
+        # Report the Lon/Lat Points Corresponding to the Anomalies
+        # in the Order of Decreasing Local Outlier Factor (i.e., the
+        # Most Anomalous Points are Shown First)
+        anomalyIdxList = [idxList[i] for i in range(len(yStar)) if predictions[i] == -1]
+        anomalyLonLatMap = {scores[i]: (self.M['longitude'][idx], self.M['latitude'][idx]) \
+                            for idx in anomalyIdxList}
+        sortedScores = sorted(scores)
+        anomaliesLonLatSorted = [anomalyLonLatMap[scores[i]] for i in range(len(sortedScores)) \
+                                 if scores[i] in anomalyLonLatMap]
+        return anomaliesLonLatSorted
 
     def detectWithIsolationForest(self):
         '''
-        TODO: Write Some Stuff.
+        Apply the Isolation Forest.
         '''
         # Find Model Hyperparameters
-        hyperParams = self.config['AnomalyDetector']['IsolationForestHyperparameters']
-        return [(-70.645, 36.125), (-101.214, 39.045)    , (-102.776, 29.333), (-71.543, 37.546), (-108.236,     41.256)]
+        hpMap = self.config['AnomalyDetector']['IsolationForestHyperparameters']
+        
+        # Get the Thresholded Response
+        yStar, idxList = self.removeCommonData(hpMap['spreadStatistic'], hpMap['threshold'])
+        yStar = [[elem] for elem in yStar]
+
+        # Instantiate the Local Outlier Factor
+        ISO = IsolationForest(n_estimators = hpMap['numEstimators'],
+                              bootstrap = hpMap['bootstrap'])
+
+        # Fit and Predict with the Local Outlier Factor
+        predictions = ISO.fit_predict(yStar)
+        scores = ISO.decision_function(yStar)
+
+        # Report the Lon/Lat Points Corresponding to the Anomalies
+        # in the Order of Decreasing Anomaly Score (i.e., the Most
+        # Anomalous Points are Shown First)
+        anomalyIdxList = [idxList[i] for i in range(len(yStar)) if predictions[i] == -1]
+        anomalyLonLatMap = {scores[i]: (self.M['longitude'][idx], self.M['latitude'][idx]) \
+                            for idx in anomalyIdxList}
+        sortedScores = sorted(scores)
+        anomaliesLonLatSorted = [anomalyLonLatMap[scores[i]] for i in range(len(sortedScores)) \
+                                 if scores[i] in anomalyLonLatMap]
+        return anomaliesLonLatSorted
 
     def detectWithAutoencoder(self):
         '''
-        TODO: Write Some Stuff.
+        Apply the Autoencoder Detection Method.
         '''
         # Find Model Hyperparameters
-        hyperParams = self.config['AnomalyDetector']['AutoencoderHyperparameters']
-        return [(-100.577, 36.124), (-71.147, 41.111)    , (-99.387, 28.534), (-101.765, 39.685), (-100.012, 27.453)]
+        hpMap = self.config['AnomalyDetector']['AutoencoderHyperparameters']
+        # TODO - COMING SOON :: I Found a Bug in my Code :<
+        return []
 
     def detectAnomalies(self):
         '''

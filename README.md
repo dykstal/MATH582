@@ -1,6 +1,8 @@
 # TROPOMI Methane Analysis Service
 *Aidan Dykstal*
 
+**Announcements:** COMING SOON are (1) the autoencoder implementation for anomaly detection and (2) the PDF document summarizing how to use this software. Expect to see these changes by Thursday's class.
+
 ## Overview
 ### The Service
 This is a project repository for MATH 582 (STATISTICS PRACTICUM) at the Colorado School of Mines. The code within creates a web-interfaced service used for detecting anomalies in tropospheric methane (as detected by the TROPOMI instrument). Three analytics are supported for anomaly detection now:

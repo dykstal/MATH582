@@ -106,6 +106,8 @@ class MethaneService(Resource):
             visualization = visualizer.visualizeAnalytic(analytic, results)
 
             # Make Results Readable on the POST
+            if results is None:
+                results = {}
             for i in range(5):
                 try:
                     results[(i + 1)] = str(results[(i + 1)][1]) + ' deg Lat.' + ', ' + str(results[(i + 1)][0]) + ' deg Lon.'

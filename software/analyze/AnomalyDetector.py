@@ -70,3 +70,4 @@ class AnomalyDetector:
         results = {}
         for i in range(len(anomalies)):
             results[(i + 1)] = anomalies[i]
+        return results

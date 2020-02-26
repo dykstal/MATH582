@@ -68,9 +68,5 @@ class AnomalyDetector:
             print('%s is not a Valid Detection Method.' % method)
             sys.exit(errno.EINVAL)
         results = {}
-        for i in range(max(len(anomalies), 5)):
-            try:
-                results[(i + 1)] = str(anomalies[i][1]) + ' deg Lat.' + ', ' + str(anomalies[i][0]) + ' deg Lon.'
-            except:
-                results[(i + 1)] = 'None'
-        return results
+        for i in range(len(anomalies)):
+            results[(i + 1)] = anomalies[i]

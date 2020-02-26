@@ -9,7 +9,7 @@ This is a project repository for MATH 582 (STATISTICS PRACTICUM) at the Colorado
 - Autoencoder Neural Network
 
 ### Customizing Analytics
-Hyperparameters and customization settings can be applied to these analytics and the raw data they apply to by modifying the configuration YAML file `config.yml`. In addition, time and lat/lon windows can be applied on the web interface and in the configuration YAML.
+Hyperparameters and customization settings can be applied to these analytics and the raw data they apply to by modifying the configuration YAML file `config.yml`. In addition, time and lat/lon windows can be applied on the web interface and in the configuration YAML. See `AnomalyDetectionCode.pdf` in `/docs` for details on hyperparameters and algorithms.
 
 ### Data Management
 The analytic is compatible with data stored in JSON, netCDF, H5, and RData files. The configuration YAML must be modified to select a data file type to prioritize.

@@ -1,8 +1,9 @@
 REST:
-    host: '0.0.0.0'
-    port: 8000
+    host: '0.0.0.0' # Do Not Change
+    port: 8000      # Do Not Change
 
 model:
+    # Which Variables to Include in the Data Matrix 
     prodVars: ['latitude',
                'longitude',
                'time',
@@ -27,24 +28,42 @@ model:
                 'apparent_scene_pressure',
                 'methane_weak_twoband_total_column',
                 'methane_strong_twoband_total_column']
+    # What's your Region Called?
     regionName: 'ContiguousUSA'
+    
+    # Lat/Lon Bounding Box
     latLower: 25.0
     latUpper: 50.0
     lonLower: -125.0
     lonUpper: -67.0
+
+    # Time Filter
     startDate: '2018-12-01'
     endDate: '2019-03-31'
-    readh5File: True
-    h5FileName: 'AidanData.h5'
-    readRDataFile: False
-    RDataFileName: 'AidanData.Rdata'
-    RDataFrameName: 'AidanData'
+
+    # Note: ALL READ OPTIONS BEING SET TO FALSE WILL LEAD TO NETCDF BEING READ
+    # ANY DATA BEING READ IN MUST BE IN THE /data DIRECTORY, WHICH SHOULD BE
+    # PLACED IN THE SAME DIRECTORY AS tropomi.py
+    readh5File: True                  # Use H5 File 
+    h5FileName: 'AidanData.h5'        # H5 File Name
+    readJSONFile: False               # Use JSON File
+    JSONFileName: 'AidanData.json'    # JSON File Name
+    readRDataFile: False              # Use RData File
+    RDataFileName: 'AidanData.Rdata'  # RData File Name
+    RDataFrameName: 'AidanData'       # R Dataframe Name (IMPORTANT!)
+
+    # What are you Looking for Anomalies In?
     response: 'methane_mixing_ratio_bias_corrected'
 
 AnomalyDetector:
+    # Choices: 'Local Outlier Factor' OR 'Isolation Forest' OR 'Autoencoder'
+    # CASE and SPACES Matter!
     method: 'Local Outlier Factor'
+
+    # Set Hyperparameters for Methods
+    # See AnomalyDetectionCode.pdf PDF in /docs
     LocalOutlierFactorHyperparameters: {'spreadStatistic': 'IQR',
-                                        'threshold': 1,
+                                        'threshold': 1, 
                                         'numNeighbors': 20,
                                         'algorithm': 'ball_tree',
                                         'leafSize': 30,
@@ -60,4 +79,4 @@ AnomalyDetector:
                                  'hiddenLayerType': 'dense'}
 
 logging:
-    level: WARN
+    level: WARN # Don't Worry about This

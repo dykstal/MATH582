@@ -105,6 +105,13 @@ class MethaneService(Resource):
             results = analyzer.runAnalytic(self.M, analytic, self.config, latBox, lonBox, startDate, endDate)
             visualization = visualizer.visualizeAnalytic(analytic, results)
 
+            # Make Results Readable on the POST
+            for i in range(5):
+                try:
+                    results[(i + 1)] = str(results[(i + 1)][1]) + ' deg Lat.' + ', ' + str(results[(i + 1)][0]) + ' deg Lon.'
+                except:
+                    results[(i + 1)] = 'None'
+
             # Post the Results and Visualizations to the Webpage
             POST_TEMPLATE_NAME = 'mainPOST.html'
             IMAGE_PATH = '../static/images/%s' % visualization

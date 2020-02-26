@@ -228,6 +228,25 @@ def getDataFromH5(config):
     M = applyDateFilter(config, M)
     return M
 
+def getDataFromJSON(config):
+    '''
+    Get the Collected, Cleaned, and Aggregated TROPOMI Data from a Preformatted JSON File.
+
+    :param config: The Dictionary of Configuration Settings from the YAML.
+    :return: A Cleaned Model Matrix of Relevant Observations and Predictors.
+    '''
+    # Open the JSON File and Return the Data
+    try:
+        with open(os.path.join('data/', config['model']['JSONFileName']), 'r') as fin:
+            M = json.load(fin)
+    except Exception as fe:
+        print('No JSON File Resides in the /data Directory')
+        sys.exit(errno.EINVAL)
+
+    # Apply a Date Filter to the Data
+    M = applyDateFilter(config, M)
+    return M
+
 def getDataFromRData(config):
     '''
     Get the Collected, Cleaned, and Aggregated TROPOMI Data from a Preformatted RData File.

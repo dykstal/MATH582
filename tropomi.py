@@ -93,13 +93,16 @@ if __name__ == '__main__':
             print('\nLoading Data from RData...')
             M = collector.getDataFromRData(config)
             print('Done!\n')
+        elif config['model']['readJSONDataFile']:
+            print('\nLoading Data from JSON...')
+            M = collector.getDataFromJSON(config)
+            print('Done!\n')
         else:
             print('\nLoading Data from NetCDF...')
             M = collector.getDataFromNetCDF(config)
             print('Done!\n')
     except Exception as e:
         print('Failed.')
-        print(e)
         print('ERROR : No Data Supplied.\n')
         sys.exit(errno.EINVAL)
 

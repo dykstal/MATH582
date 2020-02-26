@@ -18,21 +18,23 @@ The analytic is compatible with data stored in JSON, netCDF, H5, and RData files
 ### Prerequisites
 - Python 3.6+.
 - Python 3.6+ Development Tools.
+- Orca.
 
 For Ubuntu:
 ```
 sudo apt install python3.6-dev
+sudo conda install orca
 ```
 For Centos/RHEL:
 ```
 sudo yum install python36-devel
+sudo conda install orca
 ```
 
 ### Installing
-Make a virtual environment and install Python requirements:
+Clone the repository and install Python requirements:
 ```
-python3.6 -m venv tropomi
-source tropomi/bin/activate
+git clone https://github.com/dykstal/MATH582.git
 pip install -r requirements.txt
 python setup.py install
 ```

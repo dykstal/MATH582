@@ -31,8 +31,7 @@ class AnomalyDetector:
         self.M = {'methane_mixing_ratio_bias_corrected': np.array([1,2,3,4,5]),
                   'latitude': np.array([1,2,3,4,5]),
                   'longitude': np.array([1,2,3,4,5])}
-        #self.y = self.M[self.config['model']['response']]
-        self.y = np.array([i + 1 for i in range(100)])
+        self.y = self.M[self.config['model']['response']]
 
     def plotAnomalyScores(self, anomalyScores):
         '''

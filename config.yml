@@ -73,10 +73,8 @@ AnomalyDetector:
                                      'threshold': 1,
                                      'numEstimators': 100,
                                      'bootstrap': False}
-    AutoencoderHyperparameters: {'inputNeurons': 50,
-                                 'outputNeurons': 1,
-                                 'depth': 5000,
-                                 'hiddenLayerType': 'dense'}
+    AutoencoderHyperparameters: {'depth': 5,
+                                 'anomalyScoreCutoff': 4.00}
 
 logging:
     level: WARN # Don't Worry about This

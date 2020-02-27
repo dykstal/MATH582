@@ -1,7 +1,7 @@
 # TROPOMI Methane Analysis Service
 *Aidan Dykstal*
 
-**Announcements:** COMING SOON are (1) the autoencoder implementation for anomaly detection and (2) the PDF document summarizing how to use this software. Expect to see these changes by Thursday's class.
+**Announcements:** [2020-02-27] The autoencoder implementation for anomaly detection and the PDF document summarizing how to interpret hyperparameters are *available now*!
 
 ## Overview
 ### The Service
